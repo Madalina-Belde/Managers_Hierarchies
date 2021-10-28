@@ -1,0 +1,126 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Final_Assignement"
+        xmlns:VM="clr-namespace:Final_Assignement.Model"
+        xmlns:e="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        xmlns:ViewModel="clr-namespace:Final_Assignement.ViewModel" x:Class="Final_Assignement.MainWindow"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+
+    <Window.Resources>
+        <Style TargetType="{x:Type TextBlock}" x:Key="ManagerColor">
+            <Setter Property="Foreground" Value="DodgerBlue"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style TargetType="{x:Type Label}" x:Key="EmployeeColor">
+            <Setter Property="Foreground" Value="ForestGreen"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="Background" Value="Azure"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+
+        <local:TypeVisibilityConverter x:Key="EmployeeVisibilityConverter" Type="{x:Type VM:Employee}"/>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Window.DataContext>
+        <ViewModel:MainWindowViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Hierarchy of managers and employees -->
+
+        <TreeView Grid.Column="0" Background="Black" x:Name="HierarchyTreeView" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch" ItemsSource="{Binding Managers}">
+            <e:Interaction.Behaviors>
+                <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedManager, Mode=TwoWay}" />
+            </e:Interaction.Behaviors>
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding Employees}" DataType="{x:Type VM:Manager}">
+                    <TextBlock Style="{StaticResource ManagerColor}" Text="{Binding ManagerName}"/>
+                    <HierarchicalDataTemplate.ItemTemplate>
+                        <DataTemplate DataType="{x:Type VM:Employee}">
+                            <Label Tag="employeeTag" x:Name="employeeLabel" Style="{StaticResource EmployeeColor}" Content="{Binding EmployeeName}"/>
+                        </DataTemplate>
+                    </HierarchicalDataTemplate.ItemTemplate>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+
+        </TreeView>
+
+
+        <!-- Details of employees when selected item -->
+
+        <StackPanel Grid.Column="1" Margin="0,20,10,194"
+                    DataContext="{Binding SelectedItem, ElementName=HierarchyTreeView}"
+                    d:DataContext="{d:DesignInstance Type={x:Type VM:Employee}}"
+                    Tag="{Binding SelectedItem, Converter={StaticResource EmployeeVisibilityConverter}, ElementName=HierarchyTreeView}">
+
+            <StackPanel.Style>
+                <Style>
+                    <Setter Property="UIElement.Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Mode=Self}}" Value="Visible">
+                            <Setter Property="UIElement.Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Mode=Self}}" Value="Collapsed">
+                            <Setter Property="UIElement.Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+
+            <!-- Employee name -->
+            <TextBlock Grid.Row="2" Text="Name:" />
+            <TextBox x:Name="EmployeeNameTextBox" Padding="2" Text="{Binding EmployeeName, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <!-- Employee manager -->
+            <TextBlock Text="Manager:" Margin="0 10 10 0"/>
+            <TextBox x:Name="ManagerNameTextBox" Padding="2" Text="{Binding Manager, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <!-- Employee department -->
+            <TextBlock Text="Department:" Margin="0 10 10 0"/>
+            <TextBox x:Name="DepartmentTextBox" Padding="2" Text="{Binding Department, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <!-- Employee phone number -->
+            <TextBlock Text="Phone number:" Margin="0 10 10 0"/>
+            <TextBox x:Name="PhoneNumberTextBox" Padding="2" Text="{Binding PhoneNumber, UpdateSourceTrigger=PropertyChanged}"/>
+           
+        </StackPanel>
+
+        <!-- Button for adding managers -->
+        <Button x:Name="addManagerButton" Content="Add new manager" Command="{Binding DataContext.AddManagerCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Column="1" Margin="0,0,10,10" />
+
+        <!-- Button for adding employees -->
+        <Button x:Name="addEmployeeButton" Content="Add new employee" Command="{Binding DataContext.AddEmployeeCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Column="1" Margin="0,0,116,10" />
+        <Grid Background="#EE000000" Grid.ColumnSpan="2" Visibility="{Binding IsAddManagerPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Label Content="Manager Name" Foreground="LimeGreen" HorizontalAlignment="Left" Width="115" Margin="233,122,0,0" Height="25" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding ManagerName, UpdateSourceTrigger=PropertyChanged}" Margin="353,122,238,0" Height="25" VerticalAlignment="Top"/>
+            <Button Command="{Binding AddNewManagerCommand}" Content="Add" Margin="0,0,10,10" HorizontalAlignment="Right" Width="143" Height="26" VerticalAlignment="Bottom"/>
+        </Grid>
+        <Grid Background="#EE000000" Grid.ColumnSpan="2" Visibility="{Binding IsAddEmployeePanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Label Content="Employee Name" Foreground="LimeGreen" HorizontalAlignment="Left" Width="115" Margin="233,122,0,0" Height="25" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding EmployeeName, UpdateSourceTrigger=PropertyChanged}" Margin="353,122,238,0" Height="25" VerticalAlignment="Top"/>
+            <Label Content="Department" Foreground="LimeGreen" HorizontalAlignment="Left" Width="115" Margin="233,152,0,0" Height="25" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding Department, UpdateSourceTrigger=PropertyChanged}" Margin="353,152,238,0" Height="25" VerticalAlignment="Top"/>
+            <Label Content="Phone Number" Foreground="LimeGreen" HorizontalAlignment="Left" Width="115" Margin="233,182,0,0" Height="25" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding PhoneNumber, UpdateSourceTrigger=PropertyChanged}" Margin="353,182,238,0" Height="25" VerticalAlignment="Top"/>
+            <Button Command="{Binding AddNewEmployeeCommand}" Content="Add" Margin="0,0,10,10" HorizontalAlignment="Right" Width="143" Height="26" VerticalAlignment="Bottom"/>
+        </Grid>
+        <Label Content="{Binding ErrorMessage}" BorderBrush="Red" BorderThickness="1" Visibility="{Binding IsErrorMessageVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#AA000000" Foreground="Red" HorizontalContentAlignment="Center" FontWeight="Bold" FontSize="18" Margin="37,20,37,0" Height="147" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
+        <Button Command="{Binding CloseErrorMessageCommand}" Content="OK" Visibility="{Binding IsErrorMessageVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,126,49,0" Grid.Column="1" HorizontalAlignment="Right" Width="77" Height="31" VerticalAlignment="Top"/>
+    </Grid>
+</Window>
